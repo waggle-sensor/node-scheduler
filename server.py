@@ -77,7 +77,7 @@ if __name__ == '__main__':
     engine = Process(target=kb_run, args=(kill_switch, request_queue, response_queue))
     engine.start()
     try:
-        app.run()
+        app.run(host='0.0.0.0')
     except Exception:
         pass
     except KeyboardInterrupt:
