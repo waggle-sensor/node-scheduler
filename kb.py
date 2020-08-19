@@ -67,7 +67,7 @@ class kb_engine(FolKB):
             if not new:
                 break
             for clause in new:
-                KB.tell(clause)
+                self.tell(clause)
         return None
 
 # kb = kb_engine()

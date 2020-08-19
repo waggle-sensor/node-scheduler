@@ -6,4 +6,4 @@ RUN pip3 install -r /app/requirements.txt
 
 WORKDIR /app/
 EXPOSE 5000
-ENTRYPOINT ["/usr/bin/python3 /app/server.py"]
+ENTRYPOINT ["/usr/bin/python3", "/app/server.py"]
