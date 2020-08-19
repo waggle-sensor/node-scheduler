@@ -24,6 +24,12 @@ $ docker run -d -p 5000:5000 waggle/knowledgebase
 To add perceptions,
 ```
 # assume curl is installed on the host
+$ curl http://localhost:5000/api/tell?str=Require\(Smoke,GPU\)
+success
+```
+
+To ask a query,
+```
 $ curl 
 ```
 
