@@ -26,11 +26,17 @@ To add perceptions,
 # assume curl is installed on the host
 $ curl http://localhost:5000/api/tell?str=Require\(Smoke,GPU\)
 success
+$ curl http://localhost:5000/api/tell?str=Require\(Cloud,GPU\)
+success
+$ curl --data-urlencode "str=Require(x, GPU) & Require(y, GPU) ==> Conflict(x, y)" http://localhost:5000/api/tell
+success
 ```
 
 To ask a query,
 ```
-$ curl 
+# query if Smoke conflicts with any
+$ curl -d "str=Conflict(Smoke, y)" http://localhost:5000/api/ask
+{"y": ["Smoke", "Cloud"]}
 ```
 
 ### Build
