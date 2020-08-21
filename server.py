@@ -51,6 +51,14 @@ def tell():
     return "success"
 
 
+@app.route('/api/sense', methods=['GET', 'POST'])
+def sense():
+    if request.method == 'POST':
+        query = request.form
+    else:
+        query = request.args
+    
+
 @app.route('/api/ask', methods=['GET', 'POST'])
 def ask():
     if request.method == 'POST':
