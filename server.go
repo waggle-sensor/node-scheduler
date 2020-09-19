@@ -108,6 +108,7 @@ func createRouter() {
 func main() {
 	InitializeKB()
 	InitializeScheduler()
+	InitializeK3s()
 	go RunScheduler()
 	createRouter()
 }

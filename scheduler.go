@@ -1,14 +1,14 @@
 package main
 
 import (
-	"time"
 	"log"
+	"time"
 )
 
 var (
-	goals []Goal
+	goals             []Goal
 	scheduleTriggered bool
-	currentPlugins []string
+	currentPlugins    []string
 )
 
 type Port struct {
@@ -21,15 +21,16 @@ type Resource struct {
 }
 
 type Plugin struct {
-	Name      string `yaml:"name"`
-	Image string `yaml:"image"`
-	Ports     []Port `yaml:"ports"`
-	Args []string `yaml:"args"`
+	Name      string   `yaml:"name"`
+	Image     string   `yaml:"image"`
+	Ports     []Port   `yaml:"ports"`
+	Args      []string `yaml:"args"`
 	Resources struct {
 		Requests []Resource `yaml:"requests"`
 		Limits   []Resource `yaml:"limits"`
 	}
-	Env map[string]string `yaml:"env"`
+	Env     map[string]string `yaml:"env"`
+	Configs map[string]string `yaml:"configs"`
 }
 
 type PluginConfig struct {
@@ -107,13 +108,13 @@ func RunScheduler() {
 			// Get the configs of the schedulable plugins
 			schedulablePluginConfigs := getSchedulablePluginConfigs(schedulablePluginNames)
 			// Decide what to run
-		  pluginsToRun := NoSchedulingStrategy(schedulablePluginConfigs, currentPlugins)
+			pluginsToRun := NoSchedulingStrategy(schedulablePluginConfigs, currentPlugins)
 			log.Printf("Things to deploy: %v", pluginsToRun)
 			log.Printf("What has been running: %v", currentPlugins)
 			// Terminate plugins that are not subject to run
 			terminatePlugins(pluginsToRun)
 			// Launch plugins
-			if (launchPlugins(schedulablePluginConfigs, pluginsToRun)) {
+			if launchPlugins(schedulablePluginConfigs, pluginsToRun) {
 				// Track the plugin
 				// TODO: Later get status from k3s to track running plugins
 				currentPlugins = append(currentPlugins, pluginsToRun...)
@@ -150,7 +151,7 @@ func removeItem(array []string, target string) []string {
 	}
 }
 
-func getSchedulablePluginConfigs(pluginNames []string) (pluginConfigs map[string]PluginConfig){
+func getSchedulablePluginConfigs(pluginNames []string) (pluginConfigs map[string]PluginConfig) {
 	pluginConfigs = make(map[string]PluginConfig)
 	for _, goal := range goals {
 		for _, appConfig := range goal.Body.AppConfig {
