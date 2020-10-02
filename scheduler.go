@@ -1,14 +1,12 @@
 package main
 
 import (
-	"log"
 	"time"
 )
 
 var (
-	goals             []Goal
-	scheduleTriggered bool
-	currentPlugins    []string
+	goals          []Goal
+	currentPlugins []string
 )
 
 type Port struct {
@@ -84,33 +82,29 @@ type Goal struct {
 // 	}
 // }
 
-func InitializeScheduler() {
-	scheduleTriggered = false
-}
-
 func RegisterGoal(goal Goal) {
 	goals = append(goals, goal)
 	// Add rules to KB
 	for _, rule := range goal.Body.Rules {
 		AddClause(rule)
 	}
-	scheduleTriggered = true
 }
 
-func RunScheduler() {
+func RunScheduler(chanTrigger chan string, dryRun *bool) {
 	for {
 		// Do scheduling only when needed
-		if scheduleTriggered == true {
-			log.Printf("===========Time to schedule============")
+		select {
+		case who := <-chanTrigger:
+			InfoLogger.Printf("A scheduling triggered by %s", who)
 			// Ask KB what can run now
 			schedulablePluginNames := Ask()
-			log.Printf("What can run: %v", schedulablePluginNames)
+			InfoLogger.Printf("What can run: %v", schedulablePluginNames)
 			// Get the configs of the schedulable plugins
 			schedulablePluginConfigs := getSchedulablePluginConfigs(schedulablePluginNames)
 			// Decide what to run
 			pluginsToRun := NoSchedulingStrategy(schedulablePluginConfigs, currentPlugins)
-			log.Printf("Things to deploy: %v", pluginsToRun)
-			log.Printf("What has been running: %v", currentPlugins)
+			InfoLogger.Printf("Things to deploy: %v", pluginsToRun)
+			InfoLogger.Printf("What has been running: %v", currentPlugins)
 			// Terminate plugins that are not subject to run
 			terminatePlugins(pluginsToRun)
 			// Launch plugins
@@ -119,10 +113,10 @@ func RunScheduler() {
 				// TODO: Later get status from k3s to track running plugins
 				currentPlugins = append(currentPlugins, pluginsToRun...)
 			}
-			log.Printf("======================================")
+			InfoLogger.Print("======================================")
 			// scheduleTriggered = false
 		}
-		time.Sleep(3000 * time.Millisecond)
+		time.Sleep(3 * time.Second)
 	}
 }
 
@@ -177,11 +171,11 @@ func terminatePlugins(pluginsToRun []string) {
 func launchPlugins(pluginConfigs map[string]PluginConfig, pluginNames []string) bool {
 	for _, pluginName := range pluginNames {
 		// Skip launching if already running
-		log.Printf("Finding index %v, %s", currentPlugins, pluginName)
+		InfoLogger.Printf("Finding index %v, %s", currentPlugins, pluginName)
 		i := findIndex(currentPlugins, pluginName)
-		log.Printf("Index %d", i)
+		InfoLogger.Printf("Index %d", i)
 		if i >= 0 {
-			log.Printf("Already exists: %s", pluginName)
+			InfoLogger.Printf("Already exists: %s", pluginName)
 			continue
 		} else {
 			pluginConfig := pluginConfigs[pluginName]
@@ -196,13 +190,8 @@ func launchPlugins(pluginConfigs map[string]PluginConfig, pluginNames []string) 
 	return false
 }
 
-func createK3sPod(pluginConfig PluginConfig) (path string) {
-
-	return
-}
-
 func Test() {
 	names := []string{"Cloud"}
 	pc := getSchedulablePluginConfigs(names)
-	log.Printf("%v", pc)
+	InfoLogger.Printf("%v", pc)
 }

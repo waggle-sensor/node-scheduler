@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,7 +13,17 @@ import (
 	// "github.com/urfave/negroni"
 )
 
+const (
+	GET  = "GET"
+	POST = "POST"
+	PUT  = "PUT"
+)
+
 var (
+	// Channels for IPC
+	chanFromMeasure      chan RMQMessage = make(chan RMQMessage)
+	chanTriggerScheduler chan string     = make(chan string)
+
 	mainRouter *mux.Router
 )
 
@@ -28,10 +39,10 @@ func respondJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 }
 
 func handlerClauses(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	if r.Method == GET {
 		clauses := PrintClauses()
 		respondJSON(w, http.StatusOK, clauses)
-	} else if r.Method == "POST" {
+	} else if r.Method == POST {
 		r.ParseForm()
 		clause := r.Form.Get("clause")
 		log.Printf(clause)
@@ -41,15 +52,15 @@ func handlerClauses(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerSenses(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	if r.Method == GET {
 		memory := PrintMemory()
 		respondJSON(w, http.StatusOK, memory)
-	} else if r.Method == "POST" {
+	} else if r.Method == POST {
 		r.ParseForm()
 		subject := r.Form.Get("subject")
 		value := r.Form.Get("value")
 		log.Printf("%s %s", subject, value)
-		Memorize(subject, value)
+		// Memorize(subject, value)
 		respondJSON(w, http.StatusOK, subject+value)
 	} else if r.Method == "DELETE" {
 		log.Print("hit DELETE")
@@ -61,15 +72,15 @@ func handlerSenses(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerGoals(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	if r.Method == GET {
 		// clauses := PrintClauses()
 		// respondJSON(w, http.StatusOK, clauses)
 		Test()
-	} else if r.Method == "POST" {
+	} else if r.Method == POST {
 		log.Printf("hit POST")
 
 		respondJSON(w, http.StatusOK, "")
-	} else if r.Method == "PUT" {
+	} else if r.Method == PUT {
 		log.Printf("hit PUT")
 		// mReader, err := r.MultipartReader()
 		// if err != nil {
@@ -83,6 +94,7 @@ func handlerGoals(w http.ResponseWriter, r *http.Request) {
 		_ = yaml.Unmarshal(yamlFile, &goal)
 		log.Printf("%v", goal)
 		RegisterGoal(goal)
+		chanTriggerScheduler <- "api server"
 		respondJSON(w, http.StatusOK, "")
 	}
 }
@@ -106,9 +118,18 @@ func createRouter() {
 }
 
 func main() {
+	dryRun := flag.Bool("dry-run", false, "To emulate scheduler")
+	flag.Parse()
+
 	InitializeKB()
-	InitializeScheduler()
 	InitializeK3s()
-	go RunScheduler()
+
+	if !*dryRun {
+		InitializeMeasureCollector("localhost:5672")
+		go RunMeasureCollector(chanFromMeasure)
+	}
+
+	go RunScheduler(chanTriggerScheduler, dryRun)
+	go RunKnowledgebase(chanFromMeasure, chanTriggerScheduler)
 	createRouter()
 }
