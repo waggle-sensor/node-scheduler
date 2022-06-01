@@ -1,3 +1,5 @@
+# _This repo is archived. See http://github.com/waggle-sensor/edge-scheduler_
+
 ## Knowledgebase for Node Scheduler
 
 This knowledgebase (KB) offers an inference engine for logical entailment. The KB accepts local perceptions from sensor readings as well as user-defined rules. Those perceptions must be expressed in [first-order logic](https://en.wikipedia.org/wiki/First-order_logic). Examples are,
